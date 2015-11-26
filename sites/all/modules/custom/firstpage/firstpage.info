@@ -1,3 +1,4 @@
 name = First Page
-description = Module creates a page ,in the main menu. Also creates a block that displays a message to the current loged in member.
+description = Module creates a page ,in the main menu. Also creates a block that displays a message to the current loged in member. Task_1
+package = Testare
 core = 7.x

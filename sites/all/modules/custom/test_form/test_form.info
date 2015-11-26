@@ -1,3 +1,4 @@
 name = Test Form
-description = A modules that contains a form, allowing admin/*user to change the name of the site.
+description = A modules that contains a form, allowing admin/*user to change the name of the site. Task_2
+package = Testare
 core = 7.x

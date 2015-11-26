@@ -1,3 +1,4 @@
 name = Nodes Form
-description = A modules that contains a form, allowing admin to play with the current nodes.
+description = A modules that contains a form, allowing admin to play with the current nodes. Task_3
+package = Testare
 core = 7.x
