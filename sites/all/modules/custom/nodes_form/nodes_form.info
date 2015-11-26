@@ -1,0 +1,3 @@
+name = Nodes Form
+description = A modules that contains a form, allowing admin to play with the current nodes.
+core = 7.x

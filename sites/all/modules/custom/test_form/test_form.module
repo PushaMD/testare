@@ -1,0 +1,82 @@
+<?php
+/**
+ * TASK NUMBER 2
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function test_form_menu() {
+ 
+  $items['test_form'] = array(
+    'title' => 'Change the name of the site',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('test_form_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer test_form module'),
+    'menu_name' => 'main-menu',
+    'weight' => 3,
+  );
+  
+  $items['page/test_form'] = array(
+     'page callback' => 'test_form_status',
+     'access callback' => 'user_access',
+     'access arguments' => array('administer test_form status'),
+  );
+ 
+  return $items;
+}
+
+/**
+ * The test form content.
+ */
+function test_form_form($form, &$form_state) {
+  
+  $form['previous_name'] = array(
+    '#type' => 'textfield',
+    '#disabled' => TRUE,
+    '#value' => variable_get('site_name', 'Drupal'),
+  );
+  
+  $form['site_name'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Desired Site Name',
+    '#size' => 36,
+    '#maxlength' => 36,
+    '#required' => TRUE,
+  );
+  
+  $form['submit_button'] = array (
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  
+  return $form;
+}
+
+function test_form_form_validate($form, &$form_state) {
+  if (strlen($form_state['values']['site_name']) <6 ){
+    form_set_error('site_name', t('Site Name must be at least 6 characters long.'));
+  }
+}
+
+function test_form_form_submit($form, &$form_state) {
+  //var_dump($form_state);die();
+  variable_set('site_name',$form_state['values']['site_name']);
+}
+
+/**
+ * Implements hook_permissions.
+ */
+function test_form_permission() {
+  return array(
+    'administer test_form module' => array(
+      'title' => t('Administer test_form module'),
+      'description' => t('Perform administration tasks for my module.'),
+    ),
+    'administer test_form status' => array(
+      'title' => t('Administer test_form module status'),
+      'description' => t('Access the test_form module status Page'),
+    )
+  );
+}
