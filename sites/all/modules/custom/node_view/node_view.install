@@ -58,8 +58,6 @@ function node_view_install() {
     db_add_field('node_view_counter', 'total', $schema['fields']['total']);
     db_add_field('node_view_counter', 'time', $schema['fields']['time']);
     db_add_field('node_view_counter', 'uid', $schema['fields']['username']);
-    // Ignore slave server temporarily to give time for the
-    // saved block to be propagated to the slave.
     db_ignore_slave();
   }
   catch (Exception $e) {
@@ -82,8 +80,6 @@ function node_view_uninstall() {
     db_drop_field('node_view_counter', 'total');
     db_drop_field('node_view_counter', 'time');
     db_drop_field('node_view_counter', 'username');
-    // Ignore slave server temporarily to give time for the
-    // saved block to be propagated to the slave.
     db_ignore_slave();
   }
   catch (Exception $e) {

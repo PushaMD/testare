@@ -61,7 +61,6 @@ function test_form_form_validate($form, &$form_state) {
 }
 
 function test_form_form_submit($form, &$form_state) {
-  //var_dump($form_state);die();
   variable_set('site_name',$form_state['values']['site_name']);
 }
 

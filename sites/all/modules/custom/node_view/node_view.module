@@ -67,7 +67,7 @@ function node_view_node_view($node, $view_mode, $langcode) {
                 ->execute();
             } else {
 
-              $node_view_insert = db_insert('node_view_counter') // Table name no longer needs {}
+              $node_view_insert = db_insert('node_view_counter')
                 ->fields(array(
                   'nid' => $node->nid,
                   'today' => 1,
@@ -97,12 +97,10 @@ function node_view_node_view($node, $view_mode, $langcode) {
       $node_view_fields .= $record['username'];
       $node_view_fields .= " at ";
       $node_view_fields .= gmdate("d.m.Y H:i", $record['time']);
-
       $node->content['node_view_fields'] = array(
         '#markup' => $node_view_fields,
         '#weight' => -1,
       );
-           // var_dump($node->content['node_view_fields']);die();
     }
   }
 }
