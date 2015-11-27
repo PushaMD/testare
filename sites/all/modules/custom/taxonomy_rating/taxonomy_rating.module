@@ -165,20 +165,23 @@ function taxonomy_rating_block_view($delta = '') {
 function block_rating() {
   $n = 0;
   $block_content = "";
+  
   $query = db_select('taxonomy_rating_counter', 'tag_name');
   $query->fields('tag_name',array('tag_name','rating','tag_link'));
+  $query->orderBy('rating', 'DESC');
   $result = $query->execute();
 
-    while($record = $result->fetchAssoc()) {
-      $n += 1;
-      $value[$n] = $record;
-      if ( $value[$n]['tag_name'] != drupal_get_title() ) {
-        $block_content .= '<div>';
-        $block_content .= '<a href="' . $value[$n]['tag_link'] . '">';
-        $block_content .= $value[$n]['tag_name'] . '</a>';
-        $block_content .= '-> ' . $value[$n]['rating'];
-        $block_content .= '</div>';
-      }
+  while($record = $result->fetchAssoc()) {
+    $n += 1;
+    $value[$n] = $record;
+    if ( $value[$n]['tag_name'] != drupal_get_title() ) {
+      $block_content .= '<div>';
+      $block_content .= '<a href="' . $value[$n]['tag_link'] . '">';
+      $block_content .= $value[$n]['tag_name'] . '</a>';
+      $block_content .= '-> ' . $value[$n]['rating'];
+      $block_content .= '</div>';
     }
+  }
+
   return $block_content;  
 }
