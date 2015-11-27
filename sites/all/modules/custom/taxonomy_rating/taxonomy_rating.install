@@ -14,7 +14,7 @@ function taxonomy_rating_schema() {
     'description' => 'Name of the Taxonomy term.',
   );
   $schema['taxonomy_rating_counter']['fields']['rating'] = array(
-    'type' => 'int',
+    'type' => 'float',
     'not null' => TRUE,
     'unsigned' => TRUE,
     'default' => 0,
