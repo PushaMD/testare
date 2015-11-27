@@ -58,7 +58,8 @@ function taxonomy_rating_content() {
     $result = $query->execute();
 
     $comment_count = db_query('SELECT comment_count FROM {node_comment_statistics} WHERE nid = :nid', array(':nid' => $node_nid[$y]))->fetchField();
-    
+    $tag_name = db_query('SELECT name FROM {taxonomy_term_data} WHERE tid = :tid', array(':tid' => $node_tag[$y]))->fetchField();
+
     while($record = $result->fetchAssoc()) {
       $n +=1;
       $value[$n] = $record;
@@ -79,6 +80,11 @@ function taxonomy_rating_content() {
         $content .= '</div>';
         $count_posts += 1;
         $total_comments = $total_comments + $comment_count;
+        
+        variable_set('tag_name_rating', $value[$n]['name']);
+        $actual_link = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        variable_set('tag_link',$actual_link);
+      
       }
     }
   }
@@ -87,7 +93,41 @@ function taxonomy_rating_content() {
   $precontent .='Rating : '. $rating;
   $precontent .= '</h2>';
   $content = $precontent . $content;
-
+  
+  $count_row = db_query('SELECT tag_name FROM {taxonomy_rating_counter}')->rowCount();
+  if ( $count_row == 0 ) {
+    $node_view_insert = db_insert('taxonomy_rating_counter')
+      ->fields(array(
+        'tag_name' => variable_get('tag_name_rating'),
+        'rating' => $rating,
+        'tag_link' => variable_get('tag_link'),
+      ))
+      ->execute();
+  } else {
+    $record = db_select('taxonomy_rating_counter', 'tag_name')
+      ->fields('tag_name')
+      ->condition('tag_name', variable_get('tag_name_rating'), '=')
+      ->execute()
+      ->fetchAssoc();
+    if ($record['tag_name'] == variable_get('tag_name_rating')) {
+      $update_table = db_update('taxonomy_rating_counter')
+        ->fields( array (
+          'tag_name' => $record['tag_name'],
+          'rating' => $rating,
+          'tag_link' => variable_get('tag_link'),
+        ))
+        ->condition('tag_name', $record['tag_name'], '=')
+        ->execute();
+    } else {
+      $node_view_insert = db_insert('taxonomy_rating_counter')
+        ->fields(array(
+          'tag_name' => variable_get('tag_name_rating'),
+          'rating' => $rating,
+          'tag_link' => variable_get('tag_link'),
+        ))
+        ->execute();
+    }
+  }
   return $content;
 }
 
@@ -123,6 +163,22 @@ function taxonomy_rating_block_view($delta = '') {
  */
 
 function block_rating() {
+  $n = 0;
   $block_content = "";
+  $query = db_select('taxonomy_rating_counter', 'tag_name');
+  $query->fields('tag_name',array('tag_name','rating','tag_link'));
+  $result = $query->execute();
+
+    while($record = $result->fetchAssoc()) {
+      $n += 1;
+      $value[$n] = $record;
+      if ( $value[$n]['tag_name'] != drupal_get_title() ) {
+        $block_content .= '<div>';
+        $block_content .= '<a href="' . $value[$n]['tag_link'] . '">';
+        $block_content .= $value[$n]['tag_name'] . '</a>';
+        $block_content .= '-> ' . $value[$n]['rating'];
+        $block_content .= '</div>';
+      }
+    }
   return $block_content;  
 }
