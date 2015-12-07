@@ -1,0 +1,143 @@
+<?php
+/**
+ * TASK NUMBER 3
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function nodes_form_menu() {
+ 
+  $items['nodes_form'] = array(
+    'title' => 'Play with the nodes available',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('nodes_form_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer node_form module'),
+    'menu_name' => 'main-menu',
+    'weight' => 4,
+  );
+  
+  $items['page/nodes_form'] = array(
+     'page callback' => 'node_form_status',
+     'access callback' => 'user_access',
+     'access arguments' => array('administer node_form status'),
+  );
+ 
+  return $items;
+}
+
+/**
+ * The nodes form content.
+ */
+function nodes_form_form($form, &$form_state) {
+/** Start. Creation of Values, from the nodes available in the database **/ 
+  $n = 0;
+  $values = node_load_multiple(array(), array('type' => 'article'), FALSE);
+  $select_list = array();
+
+  foreach ( $values as $value ) {
+    $n +=1;
+    $select_list[$n] = $value->title;
+    $status_list[$n] = $value->status;
+    $sticky_list[$n] = $value->sticky;
+   }
+/** End. **/
+
+  $form['all_nodes'] = array(
+    '#type' => 'select',
+    '#title' => 'The current available nodes',
+    '#options' => $select_list,
+    '#required' => TRUE,
+  );
+  
+  $form['node_status'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      '1' => 'Published',
+      '2' => 'Not Published',
+    ),
+    '#default_value' => 'Published',
+    '#required' => TRUE,
+  );
+  
+  $form['node_sticky'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      '1' => 'Sticky',
+      '2' => 'Not Sticky',
+    ),
+    '#default_value' => 'Sticky',
+    '#required' => TRUE,
+  );
+
+  $form['submit_button'] = array (
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+  
+  $form['actions']['delete'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+  );
+
+  return $form;
+}
+
+function nodes_form_form_validate($form, &$form_state) {
+}
+
+function nodes_form_form_submit($form, &$form_state) {
+  /** Start. Creation of Values, from the nodes available in the database **/ 
+  $n = 0;
+  $values = node_load_multiple(array(), array('type' => 'article'), FALSE);
+  $select_list = array();
+
+  foreach ( $values as $value ) {
+    $n +=1;
+    $select_list[$n] = $value->title;
+    $status_list[$n] = $value->status;
+    $sticky_list[$n] = $value->sticky;
+   }
+  /** End. **/
+
+  $title = $select_list[$form_state['values']['all_nodes']];
+  $nid = db_query('SELECT nid FROM {node} WHERE title = :title', array(':title' => $title))->fetchField();
+  $node = node_load($nid);
+  
+  if ( $form_state['input']['op'] == $form_state['buttons'][0]['#value'] ) {
+    if ( $form_state['values']['node_status'] == '1' ) {
+      $node->status = TRUE;
+    } else {
+      $node->status = FALSE;
+    }
+    
+    if ( $form_state['values']['node_sticky'] == '1' ) {  
+      $node->sticky = TRUE;
+    } else {
+      $node->sticky = FALSE;
+    }
+    
+    node_save($node);
+  }
+  
+  if ($form_state['input']['op'] == $form_state['buttons'][1]['#value']) {
+    node_delete($nid);
+  }
+}
+
+/**
+ * Implements hook_permissions.
+ */
+function nodes_form_permission() {
+  return array(
+    'administer test_form module' => array(
+      'title' => t('Administer node_form module'),
+      'description' => t('Perform administration tasks for my module.'),
+    ),
+    'administer test_form status' => array(
+      'title' => t('Administer test_form module status'),
+      'description' => t('Access the node_form module status Page'),
+    )
+  );
+}

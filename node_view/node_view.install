@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * @file
+ * Statistics Counter
+ */
+
+function node_view_schema() {
+  $schema['node_view_counter']['fields']['nid'] = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'default' => 0,
+    'description' => 'The Node ID , of the Node that is/was viewed.',
+  );
+  $schema['node_view_counter']['fields']['today'] = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'default' => 0,
+    'description' => 'The total number of times the {node} has been viewed today.',
+  );
+  $schema['node_view_counter']['fields']['total'] = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'default' => 0,
+    'description' => 'The total number of times the {node} has been viewed total.',
+  );
+  $schema['node_view_counter']['fields']['time'] = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'default' => 0,
+    'description' => 'The time when the node was viewed',
+  );
+  $schema['node_view_counter']['fields']['username'] = array (
+    'type' => 'varchar',
+    'not null' => FALSE,
+    'default' => 'Anonymous',
+    'length' => 36,
+    'description' => 'The user that last viewed the node.',
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function node_view_install() {
+  $t = get_t();
+  $transaction = db_transaction();
+
+  try {
+    $schema = drupal_get_schema('node_view_counter');
+    db_add_field('node_view_counter', 'nid', $schema['fields']['nid']);
+    db_add_field('node_view_counter', 'today', $schema['fields']['today']);
+    db_add_field('node_view_counter', 'total', $schema['fields']['total']);
+    db_add_field('node_view_counter', 'time', $schema['fields']['time']);
+    db_add_field('node_view_counter', 'uid', $schema['fields']['username']);
+    db_ignore_slave();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('php', $e);
+    drupal_set_message($t('Cannot create new fields'), 'error');
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function node_view_uninstall() {
+  $t = get_t();
+  $transaction = db_transaction();
+
+  try {
+    db_drop_field('node_view_counter', 'nid');
+    db_drop_field('node_view_counter', 'today');
+    db_drop_field('node_view_counter', 'total');
+    db_drop_field('node_view_counter', 'time');
+    db_drop_field('node_view_counter', 'username');
+    db_ignore_slave();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('php', $e);
+    drupal_set_message($t('Cannot drop fields'), 'error');
+  }
+}

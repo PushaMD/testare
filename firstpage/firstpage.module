@@ -1,0 +1,70 @@
+<?php
+/**
+ * TASK NUMBER 1
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function firstpage_menu() {
+ 
+  $items['mypage'] = array(
+    'title' => 'First Page',
+    'page callback' => 'firstpage_content',
+    'access callback' => TRUE,
+    'menu_name' => 'main-menu',
+    'weight' => 2,
+  );
+ 
+  return $items;
+}
+
+/**
+ * First Page content that displays a message to the current loged in user.
+ */
+function firstpage_content() {
+  global $user;
+  $content = "Hello $user->name";
+  return $content;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function firstpage_block_info() {
+  $blocks['greetings'] = array(
+    'info' => t('Greetings Block'),
+    'regions' => 'sidebar_first',
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function firstpage_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'greetings':
+      $block['content'] = block_greetings();
+      break;
+  }
+
+
+  return $block;
+}
+
+/**
+ * Function that returns the current loged in member with a message.
+ */
+
+function block_greetings() {
+
+  if ( $GLOBALS['user']->uid != 0 ) {
+    $block_content = "Greetings"." ".$GLOBALS['user']->name;
+  } else {
+    $block_content = 'Greetings Anonymous';
+  }
+  return $block_content;  
+}
