@@ -1,0 +1,4 @@
+name = Node View
+description = Module that show how many time a node has been viewed. Task_4
+package = Testare
+core = 7.x

@@ -1,0 +1,187 @@
+<?php
+/**
+ * TASK NUMBER 5
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function taxonomy_rating_menu() {
+  global $user;
+  $n = 0;
+  $content = array();
+  $query = db_select('taxonomy_term_data', 'tid');
+  $query->fields('tid',array('tid','name'));
+  $result = $query->execute();
+  while($record = $result->fetchAssoc()) {
+    $n +=1;
+    $value[$n] = $record;
+    $tag_path = strtolower(str_replace(' ', '_',$value[$n]['name']));
+    $tag_page_callback = 'taxonomy_rating_content_'.$value[$n]['tid'];
+    $tag_title = $value[$n]['name'];
+  
+    $items[$tag_path] = array(
+      'title' => $tag_title,
+      'page callback' => 'taxonomy_rating_content',
+      'access callback' => TRUE,
+      'menu_name' => 'main-menu',
+      'weight' => 6,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Tags Pages content.
+ */
+function taxonomy_rating_content() {
+  $n = 0;
+  $content = '';
+  $count_posts = 0;
+  $total_comments =0;
+  $comment_count = 0;
+
+  $y = 0;
+  $keys = node_load_multiple(array(), array('type' => 'article'), FALSE);
+
+  foreach ( $keys as $key ) {
+    $y +=1;
+    $node_nid[$y] = $key->nid;
+    $node_title[$y] = $key->title;
+    $node_body[$y] = $key->body['und'][0]['value'];
+    $node_image[$y] = $key->field_image['und'][0]['uri'];
+    $node_tag[$y] = $key->field_tags['und'][0]['tid'];
+
+    $query = db_select('taxonomy_term_data', 'tid');
+    $query->fields('tid',array('tid','name'));
+    $result = $query->execute();
+
+    $comment_count = db_query('SELECT comment_count FROM {node_comment_statistics} WHERE nid = :nid', array(':nid' => $node_nid[$y]))->fetchField();
+    $tag_name = db_query('SELECT name FROM {taxonomy_term_data} WHERE tid = :tid', array(':tid' => $node_tag[$y]))->fetchField();
+
+    while($record = $result->fetchAssoc()) {
+      $n +=1;
+      $value[$n] = $record;
+
+      if ( $value[$n]['tid'] == $node_tag[$y] && $value[$n]['name'] == drupal_get_title() ) {
+        $content .= '<div class="node_teaser" style="width:100%;min-height:100px;display:block;float:left; margin:10px 0px;">';
+        $content .= '<div style="width:20%;float:left;">';
+        $content .= '<img src='.file_create_url($node_image[$y]).' style="width:100px; display:block;float:left;" />';
+        $content .= '</div>';
+        $content .= '<div style="width:80%;float:right;">';
+        $content .= '<div>';
+        $content .= '<h1>'.$node_title[$y].'</h1>';
+        $content .= '</div>';
+        $content .= '<div style="  text-overflow: ellipsis;word-wrap: break-word;overflow: hidden;max-height: 10.8em;line-height: 1.8em;">';
+        $content .= '<p>'.$node_body[$y].'</p>';
+        $content .= '</div>';
+        $content .= '</div>';
+        $content .= '</div>';
+        $count_posts += 1;
+        $total_comments = $total_comments + $comment_count;
+        
+        variable_set('tag_name_rating', $value[$n]['name']);
+        $actual_link = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        variable_set('tag_link',$actual_link);
+      
+      }
+    }
+  }
+  $rating = (5*$count_posts) + ($total_comments*0.1);
+  $precontent = '<h2>';
+  $precontent .='Rating : '. $rating;
+  $precontent .= '</h2>';
+  $content = $precontent . $content;
+  
+  $count_row = db_query('SELECT tag_name FROM {taxonomy_rating_counter}')->rowCount();
+  if ( $count_row == 0 ) {
+    $node_view_insert = db_insert('taxonomy_rating_counter')
+      ->fields(array(
+        'tag_name' => variable_get('tag_name_rating'),
+        'rating' => $rating,
+        'tag_link' => variable_get('tag_link'),
+      ))
+      ->execute();
+  } else {
+    $record = db_select('taxonomy_rating_counter', 'tag_name')
+      ->fields('tag_name')
+      ->condition('tag_name', variable_get('tag_name_rating'), '=')
+      ->execute()
+      ->fetchAssoc();
+    if ($record['tag_name'] == variable_get('tag_name_rating')) {
+      $update_table = db_update('taxonomy_rating_counter')
+        ->fields( array (
+          'tag_name' => $record['tag_name'],
+          'rating' => $rating,
+          'tag_link' => variable_get('tag_link'),
+        ))
+        ->condition('tag_name', $record['tag_name'], '=')
+        ->execute();
+    } else {
+      $node_view_insert = db_insert('taxonomy_rating_counter')
+        ->fields(array(
+          'tag_name' => variable_get('tag_name_rating'),
+          'rating' => $rating,
+          'tag_link' => variable_get('tag_link'),
+        ))
+        ->execute();
+    }
+  }
+  return $content;
+}
+
+
+/**
+ * Implements hook_block_info().
+ */
+function taxonomy_rating_block_info() {
+  $blocks['ratings'] = array(
+    'info' => t('Ratings Block'),
+    'regions' => 'sidebar_first',
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function taxonomy_rating_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'ratings':
+      $block['content'] = block_rating();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Returns the body of the block.
+ */
+
+function block_rating() {
+  $n = 0;
+  $block_content = "";
+  
+  $query = db_select('taxonomy_rating_counter', 'tag_name');
+  $query->fields('tag_name',array('tag_name','rating','tag_link'));
+  $query->orderBy('rating', 'DESC');
+  $result = $query->execute();
+
+  while($record = $result->fetchAssoc()) {
+    $n += 1;
+    $value[$n] = $record;
+    if ( $value[$n]['tag_name'] != drupal_get_title() ) {
+      $block_content .= '<div>';
+      $block_content .= '<a href="' . $value[$n]['tag_link'] . '">';
+      $block_content .= $value[$n]['tag_name'] . '</a>';
+      $block_content .= '-> ' . $value[$n]['rating'];
+      $block_content .= '</div>';
+    }
+  }
+
+  return $block_content;  
+}

@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Statistics Counter
+ */
+
+function taxonomy_rating_schema() {
+  $schema['taxonomy_rating_counter']['fields']['tag_name'] = array (
+    'type' => 'varchar',
+    'not null' => FALSE,
+    'default' => '',
+    'length' => 36,
+    'description' => 'Name of the Taxonomy term.',
+  );
+  $schema['taxonomy_rating_counter']['fields']['rating'] = array(
+    'type' => 'float',
+    'not null' => TRUE,
+    'unsigned' => TRUE,
+    'default' => 0,
+    'description' => 'The Rating of the taxonomy term based on specific formula.',
+  );
+  $schema['taxonomy_rating_counter']['fields']['tag_link'] = array(
+    'type' => 'varchar',
+    'not null' => FALSE,
+    'default' => '',
+    'length' => 36,
+    'description' => 'The link of the tag.'
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function taxonomy_rating_install() {
+  $t = get_t();
+  $transaction = db_transaction();
+
+  try {
+    $schema = drupal_get_schema('taxonomy_rating_counter');
+    db_add_field('taxonomy_rating_counter', 'tag_name', $schema['fields']['tag_name']);
+    db_add_field('taxonomy_rating_counter', 'rating', $schema['fields']['rating']);
+    db_add_field('taxonomy_rating_counter', 'tag_link', $schema['fields']['tag_link']);
+    db_ignore_slave();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('php', $e);
+    drupal_set_message($t('Cannot create new fields'), 'error');
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function taxonomy_rating_uninstall() {
+  $t = get_t();
+  $transaction = db_transaction();
+
+  try {
+    db_drop_field('taxonomy_rating_counter', 'tag_name');
+    db_drop_field('taxonomy_rating_counter', 'rating');
+    db_drop_field('taxonomy_rating_counter', 'tag_link');
+    db_ignore_slave();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('php', $e);
+    drupal_set_message($t('Cannot drop fields'), 'error');
+  }
+}

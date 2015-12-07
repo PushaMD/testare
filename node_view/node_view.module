@@ -1,0 +1,106 @@
+<?php
+/**
+ * TASK NUMBER 4
+ */
+
+/**
+ * Implementation of hook_node_view.
+ */
+function node_view_node_view($node, $view_mode, $langcode) {
+  global $n;
+  global $user;
+  variable_get($n);
+  if ( $user->uid != 0 ) {
+    $user_name = $user->name;
+  } else {
+    $user_name = 'Anonymous';
+  }
+
+  if ( $node->type == 'article' ) {
+    if ( $view_mode == 'full' ) {
+      $nid = db_query('SELECT title FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+      if (db_table_exists('node_view_counter')) {
+        $query = db_select('node_view_counter', 'nid');
+        $query->fields('nid');
+        $result = $query->execute();
+        $count_row = db_query('SELECT nid FROM {node_view_counter}')->rowCount();
+
+        if ( $count_row == 0 ) {
+
+          $node_view_insert = db_insert('node_view_counter')
+            ->fields(array(
+              'nid' => $node->nid,
+              'today' => 1,
+              'total' => 1,
+              'time' => REQUEST_TIME,
+              'username' => $user_name,
+            ))
+            ->execute();
+
+        } else {
+
+          $record = db_select('node_view_counter', 'nid')
+            ->fields('nid')
+            ->condition('nid', $node->nid, '=')
+            ->execute()
+            ->fetchAssoc();
+
+            if ( $record['nid'] == $node->nid ) {
+
+              $today_min_time = strtotime('today midnight');
+              $today_max_time = $today_min_time + 86400;  
+              if ( $today_min_time < $record['time'] && $record['time'] < $today_max_time ) {
+                $record['today'] += 1;
+              } elseif ( $record['time'] < $today_min_time ) {
+                $record['today'] = 1;
+              }
+              
+              $update_table = db_update('node_view_counter')
+                ->fields( array (
+                  'nid' => $record['nid'],
+                  'today' => $record['today'],
+                  'total' => $record['total'] += 1,
+                  'time' => REQUEST_TIME,
+                  'username' => $user_name,
+                ))
+                ->condition('nid', $record['nid'], '=')
+                ->execute();
+            } else {
+
+              $node_view_insert = db_insert('node_view_counter')
+                ->fields(array(
+                  'nid' => $node->nid,
+                  'today' => 1,
+                  'total' => 1,
+                  'time' => REQUEST_TIME,
+                  'username' => $user_name,
+                ))
+              ->execute();
+
+            }
+        }
+      }
+      $record = db_select('node_view_counter', 'nid')
+        ->fields('nid')
+        ->condition('nid', $node->nid, '=')
+        ->execute()
+        ->fetchAssoc();
+      $node_view_fields = "<div>";
+      $node_view_fields .= "<p>"; 
+      $node_view_fields .="Number of views ";
+      $node_view_fields .= $record['today'];
+      $node_view_fields .= " today / ";
+      $node_view_fields .= $record['total'];
+      $node_view_fields .= " total.";
+      $node_view_fields .= "</p>";
+      $node_view_fields .= "Last Viewed by : ";
+      $node_view_fields .= $record['username'];
+      $node_view_fields .= " at ";
+      $node_view_fields .= gmdate("d.m.Y H:i", $record['time']);
+      $node->content['node_view_fields'] = array(
+        '#markup' => $node_view_fields,
+        '#weight' => -1,
+      );
+    }
+  }
+}
