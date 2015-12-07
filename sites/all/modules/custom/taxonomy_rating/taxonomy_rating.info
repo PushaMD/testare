@@ -1,0 +1,4 @@
+name = Taxonomy Rating
+description = Module that rates/ranks nodes by taxonomy. Task_5
+package = Testare
+core = 7.x
